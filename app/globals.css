@@ -46,6 +46,10 @@
   --radius-2xl: calc(var(--radius) * 1.8);
   --radius-3xl: calc(var(--radius) * 2.2);
   --radius-4xl: calc(var(--radius) * 2.6);
+  --color-advisory-low: var(--advisory-low);
+  --color-advisory-moderate: var(--advisory-moderate);
+  --color-advisory-high: var(--advisory-high);
+  --color-advisory-surface: var(--advisory-surface);
 }
 
 :root {
@@ -81,6 +85,15 @@
   --sidebar-accent-foreground: oklch(0.205 0 0);
   --sidebar-border: oklch(0.922 0 0);
   --sidebar-ring: oklch(0.708 0 0);
+
+  /* Riservati ESCLUSIVAMENTE alle segnalazioni di rischio (stagionalità e
+     advisory di sicurezza). Non riutilizzarli per badge di prezzo, promozioni o
+     stati generici: l'utente deve poterli riconoscere a colpo d'occhio come
+     "attenzione". Il colore è sempre ridondante rispetto a icona + testo. */
+  --advisory-low: oklch(0.44 0.09 155);
+  --advisory-moderate: oklch(0.47 0.11 75);
+  --advisory-high: oklch(0.47 0.17 25);
+  --advisory-surface: oklch(0.97 0.01 90);
 }
 
 .dark {
@@ -115,6 +128,12 @@
   --sidebar-accent-foreground: oklch(0.985 0 0);
   --sidebar-border: oklch(1 0 0 / 10%);
   --sidebar-ring: oklch(0.556 0 0);
+
+  /* Varianti scure: più chiare per mantenere il contrasto su fondo scuro. */
+  --advisory-low: oklch(0.78 0.13 155);
+  --advisory-moderate: oklch(0.82 0.14 80);
+  --advisory-high: oklch(0.75 0.16 25);
+  --advisory-surface: oklch(0.26 0.01 90);
 }
 
 @layer base {
@@ -126,5 +145,17 @@
   }
   html {
     @apply font-sans;
+  }
+
+  /* Chi ha chiesto meno movimento non deve subire animazioni decorative. */
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
   }
 }
