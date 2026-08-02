@@ -6,12 +6,15 @@ import { Button } from "@/components/ui/button";
 import { getOrCreateCurrentUser, FREE_TIER_ROUTE_LIMIT } from "@/lib/auth";
 import { calculateMaxDays } from "@/lib/max-days";
 import { prisma } from "@/lib/prisma";
+import { buildAffiliateDeeplink } from "@/lib/providers/travelpayouts";
 import type { RiskLevel } from "@/components/risk-badge";
 
 export const metadata: Metadata = {
-  title: "Le tue rotte — trip-runway",
+  title: "Le tue rotte",
   description:
     "Le rotte che stai monitorando, ordinate per giorni di permanenza sostenibili con il tuo budget.",
+  // Area privata: non deve finire nell'indice.
+  robots: { index: false, follow: false },
 };
 
 // I prezzi cambiano a ogni run del cronjob: niente cache statica.
@@ -55,8 +58,11 @@ export default async function DashboardPage() {
     }),
   ]);
 
+  // Il marker resta server-side; se manca, il CTA affiliato semplicemente non compare.
+  const affiliateMarker = process.env.TRAVELPAYOUTS_MARKER;
+
   // L'ordinamento per giorni sostenibili è il cuore del prodotto: chi ha il
-  // margine più ampio va in cima. Le rotte senza prezzo ancora ignoto vanno in fondo.
+  // margine più ampio va in cima. Le rotte col prezzo ancora ignoto vanno in fondo.
   const rows = savedRoutes
     .map((saved) => {
       const destination = saved.trackedRoute.destination;
@@ -109,6 +115,17 @@ export default async function DashboardPage() {
                 sourceUrl: destination.advisory.sourceUrl,
                 updatedAt: destination.advisory.updatedAt,
               }
+            : null,
+          bookingUrl: affiliateMarker
+            ? buildAffiliateDeeplink(
+                {
+                  originIata: saved.trackedRoute.originIata,
+                  destinationIata: destination.iataCity,
+                  departureYear: saved.trackedRoute.departureYear,
+                  departureMonth: saved.trackedRoute.departureMonth,
+                },
+                affiliateMarker
+              )
             : null,
         },
       };

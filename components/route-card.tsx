@@ -1,6 +1,7 @@
-import { CalendarDays, PlaneTakeoff, Wallet } from "lucide-react";
+import { CalendarDays, ExternalLink, PlaneTakeoff, Wallet } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { RiskBadge, type RiskLevel } from "@/components/risk-badge";
+import { Button } from "@/components/ui/button";
 import { advisoryLevelToRisk, formatMonth } from "@/lib/advisory";
 import { calculateMaxDays } from "@/lib/max-days";
 import { DeleteRouteButton } from "@/components/delete-route-button";
@@ -28,6 +29,11 @@ export interface RouteCardProps {
     sourceUrl: string;
     updatedAt: Date;
   } | null;
+  /**
+   * Deeplink affiliato, calcolato server-side (il marker è un segreto di env).
+   * Assente se Travelpayouts non è configurato.
+   */
+  bookingUrl?: string | null;
 }
 
 const euro = new Intl.NumberFormat("it-IT", {
@@ -48,6 +54,7 @@ export function RouteCard({
   dailyCostGround,
   seasonality,
   advisory,
+  bookingUrl,
 }: RouteCardProps) {
   const maxDays =
     flightPrice === null
@@ -122,6 +129,30 @@ export function RouteCard({
             sourceUrl={advisory.sourceUrl}
             updatedAt={advisory.updatedAt}
           />
+        )}
+
+        {/* Il CTA di prenotazione sta DOPO le segnalazioni di rischio, non prima:
+            il prodotto promette di avvisare "prima che prenoti", e un pulsante di
+            acquisto sopra un avviso di sicurezza contraddirebbe quella promessa.
+            Resta comunque il passo naturale successivo al calcolo. */}
+        {bookingUrl && (
+          <div>
+            <Button
+              variant="outline"
+              render={
+                <a href={bookingUrl} target="_blank" rel="noopener noreferrer" />
+              }
+            >
+              Cerca voli per {destinationName}
+              <ExternalLink aria-hidden="true" className="size-4" />
+            </Button>
+            <p className="mt-2 text-xs text-muted-foreground">
+              {/* Trasparenza sull'affiliazione: obbligo di disclosure e, a monte,
+                  condizione perché l'utente si fidi del consiglio. */}
+              Link di affiliazione: se prenoti, riceviamo una commissione senza
+              costi aggiuntivi per te. Si apre in una nuova scheda.
+            </p>
+          </div>
         )}
       </CardContent>
     </Card>

@@ -13,10 +13,44 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
+const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
+
+const DESCRIPTION =
+  "Calcola quanti giorni puoi viaggiare con il tuo budget: incrociamo il prezzo del volo con il costo della vita a destinazione.";
+
 export const metadata: Metadata = {
-  title: "trip-runway",
-  description:
-    "Calcola quanti giorni puoi viaggiare con il tuo budget, in base al costo del volo e al costo della vita a destinazione.",
+  metadataBase: new URL(SITE_URL),
+  // Il template lascia a ogni pagina il proprio titolo, mantenendo il brand in coda.
+  title: {
+    default: "trip-runway — quanti giorni dura il tuo budget di viaggio",
+    template: "%s — trip-runway",
+  },
+  description: DESCRIPTION,
+  // Intento di ricerca a coda lunga, non chiavi generiche ad altissima competizione.
+  keywords: [
+    "calcolatore budget viaggio",
+    "quanto costa vivere in Thailandia",
+    "budget nomadi digitali",
+    "costo della vita sud-est asiatico",
+    "quanti giorni posso viaggiare",
+  ],
+  openGraph: {
+    type: "website",
+    locale: "it_IT",
+    siteName: "trip-runway",
+    title: "Quanto dura davvero il tuo budget di viaggio?",
+    description: DESCRIPTION,
+    url: SITE_URL,
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Quanto dura davvero il tuo budget di viaggio?",
+    description: DESCRIPTION,
+  },
+  robots: {
+    index: true,
+    follow: true,
+  },
 };
 
 export default function RootLayout({
