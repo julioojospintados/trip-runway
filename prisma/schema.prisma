@@ -1,8 +1,6 @@
 // This is your Prisma schema file,
 // learn more about it in the docs: https://pris.ly/d/prisma-schema
 
-// Get a free hosted Postgres database in seconds: `npx create-db`
-
 generator client {
   provider = "prisma-client"
   output   = "../lib/generated/prisma"
@@ -10,4 +8,99 @@ generator client {
 
 datasource db {
   provider = "postgresql"
+}
+
+enum PlanTier {
+  FREE
+  PRO
+}
+
+enum SeasonRisk {
+  LOW
+  MODERATE
+  HIGH
+}
+
+model User {
+  id         String       @id @default(cuid())
+  clerkId    String       @unique
+  email      String       @unique
+  tier       PlanTier     @default(FREE)
+  createdAt  DateTime     @default(now())
+  savedRoutes SavedRoute[]
+}
+
+/// Destinazione: costo vita e dati di rischio (stagionalità + advisory ufficiali).
+/// Vedi agents/data-integration.md per il pattern di ingestione ("Destination Risk Feed").
+model Destination {
+  id              String   @id @default(cuid())
+  iataCity        String   @unique
+  countryCode     String
+  name            String
+  dailyCostGround Decimal  @db.Decimal(10, 2)
+  fixedExtras     Decimal  @default(0) @db.Decimal(10, 2)
+
+  seasonality ClimateSeasonality[]
+  advisory    SecurityAdvisory?
+  routes      TrackedRoute[]
+}
+
+/// Stagionalità climatica per mese (es. monsoni). Fonte automatizzabile (v1).
+model ClimateSeasonality {
+  id            String      @id @default(cuid())
+  destination   Destination @relation(fields: [destinationId], references: [id], onDelete: Cascade)
+  destinationId String
+  month         Int // 1-12
+  riskLevel     SeasonRisk
+  label         String // es. "Alta probabilità di piogge monsoniche"
+  source        String
+  updatedAt     DateTime    @updatedAt
+
+  @@unique([destinationId, month])
+}
+
+/// Advisory di sicurezza governativo (Farnesina/FCDO/State Dept). Fonte automatizzabile (v1).
+/// Un solo record per destinazione: rappresenta lo stato attuale, non lo storico.
+model SecurityAdvisory {
+  id            String      @id @default(cuid())
+  destination   Destination @relation(fields: [destinationId], references: [id], onDelete: Cascade)
+  destinationId String      @unique
+  level         Int // classificazione originale della fonte, es. 0-4
+  summary       String
+  source        String
+  sourceUrl     String
+  updatedAt     DateTime    @updatedAt
+}
+
+/// Rotta unica (origine + destinazione + finestra mensile), deduplicata.
+/// Il cronjob notturno itera su queste righe, non sugli utenti (vedi project-brief.md, Sezione 4.1).
+model TrackedRoute {
+  id            String   @id @default(cuid())
+  originIata    String
+  destination   Destination @relation(fields: [destinationId], references: [id])
+  destinationId String
+  departureYear  Int
+  departureMonth Int // 1-12
+
+  lastPrice     Decimal?  @db.Decimal(10, 2)
+  priceSource   String? // "amadeus" | "travelpayouts"
+  lastCheckedAt DateTime?
+
+  savedRoutes SavedRoute[]
+
+  @@unique([originIata, destinationId, departureYear, departureMonth])
+}
+
+/// Rotta salvata da un utente specifico, con il proprio budget.
+/// MaxDays = floor((totalBudget - trackedRoute.lastPrice - destination.fixedExtras) / destination.dailyCostGround)
+model SavedRoute {
+  id             String       @id @default(cuid())
+  user           User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId         String
+  trackedRoute   TrackedRoute @relation(fields: [trackedRouteId], references: [id])
+  trackedRouteId String
+  totalBudget    Decimal      @db.Decimal(10, 2)
+  createdAt      DateTime     @default(now())
+
+  @@unique([userId, trackedRouteId])
 }
