@@ -14,13 +14,12 @@ Il software non è un semplice aggregatore di voli, ma un "Travel Budget Engine"
 - **Database & ORM:** PostgreSQL (Supabase) gestito tramite Prisma ORM.
 - **Autenticazione:** Clerk (per delegare gestione sessioni, sicurezza e 2FA).
 - **API Esterne:**
-  1. *Amadeus API:* Provider primario per il monitoraggio quotidiano delle rotte principali in background.
-  2. *Travelpayouts (Aviasales):* Provider secondario per il recupero di voli low-cost locali e la generazione dei deeplink affiliati per la monetizzazione.
+  1. *Travelpayouts (Aviasales):* Unico provider di prezzi voli (dati aggregati, gratuito, nessuna soglia di traffico) e generazione dei deeplink affiliati per la monetizzazione. **Amadeus è stato rimosso dallo stack**: il portale self-service per sviluppatori è stato chiuso definitivamente da Amadeus (decommissioning completato il 17 luglio 2026) — resta solo un canale Enterprise non percorribile per un progetto in fase di bootstrapping. Se in futuro serviranno prezzi live da GDS, il candidato di ripiego è Duffel (self-serve, a consumo, non gratuito).
 
-## 4. Regole di Architettura e Sicurezza
-1. **Modello Rotte-Centrico (Anti-Abuso):** Per non esaurire le quote gratuite delle API (es. 2.000 chiamate/mese di Amadeus), il frontend non deve *mai* triggerare chiamate API dirette on-demand. L'utente salva la rotta nel database. Un cronjob notturno prenderà le rotte uniche dal database, farà una singola chiamata API per rotta, e aggiornerà i prezzi per tutti gli utenti interessati (Deduplicazione).
+## 4. Regola di Architettura e Sicurezza
+1. **Modello Rotte-Centrico (Anti-Abuso):** Per non esaurire le quote gratuite delle API, il frontend non deve *mai* triggerare chiamate API dirette on-demand. L'utente salva la rotta nel database. Un cronjob notturno prenderà le rotte uniche dal database, farà una singola chiamata API per rotta, e aggiornerà i prezzi per tutti gli utenti interessati (Deduplicazione).
 2. **Motore di Calcolo (Core Business Logic):** L'algoritmo primario da implementare per ordinare i risultati è:
-   MaxDays = Floor((TotalBudget - FlightPrice - FixedExtras) / DailyCostGround)
+   $$\text{MaxDays} = \text{Floor}\left(\frac{\text{TotalBudget} - \text{FlightPrice} - \text{FixedExtras}}{\text{DailyCostGround}}\right)$$
 3. **Sicurezza Server Actions:** Ogni singola Server Action che modifica o cancella dati deve includere un controllo di autorizzazione rigoroso per verificare che l'utente autenticato sia il reale proprietario del record, prevenendo vulnerabilità IDOR.
 
 ## Nota sul nome del progetto

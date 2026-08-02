@@ -34,8 +34,9 @@ interface TravelpayoutsResponse {
 }
 
 /**
- * Provider secondario: voli low-cost locali che Amadeus tende a non coprire,
- * più il deeplink affiliato per la monetizzazione.
+ * Unico provider di prezzi voli. È gratuito (nessuna soglia di traffico per
+ * questo endpoint dati aggregati) e allineato alla monetizzazione: stesso
+ * account, stesso token, deeplink affiliato incluso in ogni risposta.
  */
 export async function fetchTravelpayoutsPrice(
   query: RouteQuery

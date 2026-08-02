@@ -32,58 +32,38 @@ describe("updateTrackedRoutePrices", () => {
     update.mockResolvedValue({});
   });
 
-  it("usa il provider primario quando risponde", async () => {
+  it("aggiorna il prezzo quando il provider risponde", async () => {
     findMany.mockResolvedValue([route("r1", "BKK")]);
-    const fetchPrimary = vi
-      .fn()
-      .mockResolvedValue({ price: 480, currency: "EUR", source: "amadeus" });
-    const fetchSecondary = vi.fn();
-
-    const report = await updateTrackedRoutePrices({
-      fetchPrimary,
-      fetchSecondary,
-    });
-
-    expect(report).toMatchObject({ total: 1, updated: 1, failed: 0 });
-    expect(fetchSecondary).not.toHaveBeenCalled();
-    expect(update).toHaveBeenCalledWith(
-      expect.objectContaining({
-        where: { id: "r1" },
-        data: expect.objectContaining({ lastPrice: 480, priceSource: "amadeus" }),
-      })
-    );
-  });
-
-  it("ricade sul provider secondario se il primario fallisce", async () => {
-    findMany.mockResolvedValue([route("r1", "BKK")]);
-    const fetchPrimary = vi.fn().mockRejectedValue(new Error("quota esaurita"));
-    const fetchSecondary = vi.fn().mockResolvedValue({
-      price: 390,
+    const fetchPrice = vi.fn().mockResolvedValue({
+      price: 480,
       currency: "EUR",
       source: "travelpayouts",
       deeplink: "https://example.test",
     });
 
-    const report = await updateTrackedRoutePrices({
-      fetchPrimary,
-      fetchSecondary,
-    });
+    const report = await updateTrackedRoutePrices({ fetchPrice });
 
     expect(report).toMatchObject({ total: 1, updated: 1, failed: 0 });
-    expect(report.outcomes[0].source).toBe("travelpayouts");
+    expect(update).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: { id: "r1" },
+        data: expect.objectContaining({
+          lastPrice: 480,
+          priceSource: "travelpayouts",
+        }),
+      })
+    );
   });
 
-  it("registra la rotta come fallita se entrambi i provider falliscono", async () => {
+  it("registra la rotta come fallita se il provider fallisce", async () => {
     findMany.mockResolvedValue([route("r1", "BKK")]);
 
     const report = await updateTrackedRoutePrices({
-      fetchPrimary: vi.fn().mockRejectedValue(new Error("giù")),
-      fetchSecondary: vi.fn().mockRejectedValue(new Error("pure giù")),
+      fetchPrice: vi.fn().mockRejectedValue(new Error("quota esaurita")),
     });
 
     expect(report).toMatchObject({ total: 1, updated: 0, failed: 1 });
-    expect(report.outcomes[0].error).toContain("amadeus");
-    expect(report.outcomes[0].error).toContain("travelpayouts");
+    expect(report.outcomes[0].error).toContain("quota esaurita");
     expect(update).not.toHaveBeenCalled();
   });
 
@@ -94,15 +74,17 @@ describe("updateTrackedRoutePrices", () => {
       route("r3", "DPS"),
     ]);
 
-    const fetchPrimary = vi.fn(async (query: { destinationIata: string }) => {
+    const fetchPrice = vi.fn(async (query: { destinationIata: string }) => {
       if (query.destinationIata === "SGN") throw new Error("rotta rotta");
-      return { price: 500, currency: "EUR", source: "amadeus" as const };
+      return {
+        price: 500,
+        currency: "EUR",
+        source: "travelpayouts" as const,
+        deeplink: "https://example.test",
+      };
     });
 
-    const report = await updateTrackedRoutePrices({
-      fetchPrimary,
-      fetchSecondary: vi.fn().mockRejectedValue(new Error("giù anche qui")),
-    });
+    const report = await updateTrackedRoutePrices({ fetchPrice });
 
     expect(report).toMatchObject({ total: 3, updated: 2, failed: 1 });
     expect(update).toHaveBeenCalledTimes(2);
@@ -112,15 +94,15 @@ describe("updateTrackedRoutePrices", () => {
     // Tre utenti che salvano la stessa rotta producono una sola TrackedRoute:
     // il batch riceve una riga e fa una sola chiamata.
     findMany.mockResolvedValue([route("r1", "BKK")]);
-    const fetchPrimary = vi
-      .fn()
-      .mockResolvedValue({ price: 480, currency: "EUR", source: "amadeus" });
-
-    await updateTrackedRoutePrices({
-      fetchPrimary,
-      fetchSecondary: vi.fn(),
+    const fetchPrice = vi.fn().mockResolvedValue({
+      price: 480,
+      currency: "EUR",
+      source: "travelpayouts",
+      deeplink: "https://example.test",
     });
 
-    expect(fetchPrimary).toHaveBeenCalledTimes(1);
+    await updateTrackedRoutePrices({ fetchPrice });
+
+    expect(fetchPrice).toHaveBeenCalledTimes(1);
   });
 });

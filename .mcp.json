@@ -3,6 +3,14 @@
     "supabase": {
       "type": "http",
       "url": "https://mcp.supabase.com/mcp?read_only=true"
+    },
+    "vercel": {
+      "type": "http",
+      "url": "https://mcp.vercel.com"
+    },
+    "posthog": {
+      "type": "http",
+      "url": "https://mcp.posthog.com/mcp"
     }
   }
 }

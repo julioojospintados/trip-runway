@@ -1,6 +1,5 @@
 /**
- * Formato interno normalizzato: Amadeus e Travelpayouts rispondono con schemi
- * diversi, ma tutto ciò che entra nel DB passa da qui.
+ * Formato interno normalizzato in cui atterra tutto ciò che entra nel DB.
  * Vedi .claude/agents/data-integration.md, regola 2 (Normalizzazione & Deduplicazione).
  */
 export interface NormalizedFlightPrice {
@@ -8,11 +7,17 @@ export interface NormalizedFlightPrice {
   price: number;
   currency: string;
   source: FlightPriceSource;
-  /** Deeplink affiliato, presente solo per Travelpayouts. */
-  deeplink?: string;
+  /** Deeplink affiliato per la monetizzazione. */
+  deeplink: string;
 }
 
-export type FlightPriceSource = "amadeus" | "travelpayouts";
+/**
+ * Unico provider oggi (Travelpayouts). Amadeus è stato rimosso: il portale
+ * self-service è stato chiuso da Amadeus a luglio 2026 — vedi project-brief.md.
+ * Tipo mantenuto come union per non dover toccare tutta la catena se in futuro
+ * si aggiunge un secondo provider (es. Duffel).
+ */
+export type FlightPriceSource = "travelpayouts";
 
 export interface RouteQuery {
   originIata: string;

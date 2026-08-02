@@ -41,7 +41,7 @@ Il "pPoC Engine" non è un pezzo di codice applicativo, ma un protocollo decisio
 ### 6.2 Metriche e Criteri DFV (Design Thinking)
 Ogni test di validazione deve calcolare un indice ponderato basato sui tre pilastri del Design Thinking:
 - **D (Desiderabilità - Ponderazione 40%):** Probabilità stimata che l'utente provi un "pain" reale risolvibile dalla feature (validata tramite test di interesse, click su teaser o interviste).
-- **F (Fattibilità - Ponderazione 30%):** Probabilità tecnica di implementazione con lo stack attuale (Next.js, Supabase, limiti delle API Amadeus/Travelpayouts) senza generare colli di bottiglia architetturali.
+- **F (Fattibilità - Ponderazione 30%):** Probabilità tecnica di implementazione con lo stack attuale (Next.js, Supabase, limiti dell'API Travelpayouts) senza generare colli di bottiglia architetturali.
 - **V (Viabilità - Ponderazione 30%):** Probabilità che l'equazione economica ritorni un margine positivo (Costi di infrastruttura/chiamate API vs Ricavi attesi da affiliazioni o abbonamenti PRO).
 
 ### 6.3 Algoritmo di Valutazione (pPoC Score)
